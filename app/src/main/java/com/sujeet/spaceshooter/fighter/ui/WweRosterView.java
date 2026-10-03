@@ -77,70 +77,145 @@ public class WweRosterView extends View {
 
         WweSuperstar current = roster.get(selectedIndex);
 
-        // Hero Card Background
+        // Hero Card Background Frame
         paint.setColor(Color.rgb(35, 25, 50));
-        canvas.drawRoundRect(cx - 240, 110, cx + 240, cy + 90, 24, 24, paint);
+        canvas.drawRoundRect(cx - 240, 105, cx + 240, cy + 95, 24, 24, paint);
 
         paint.setColor(current.getPrimaryColor());
-        canvas.drawRoundRect(cx - 230, 120, cx + 230, cy + 80, 20, 20, paint);
+        canvas.drawRoundRect(cx - 230, 115, cx + 230, cy + 85, 20, 20, paint);
 
         // Character Name
         paint.setColor(Color.WHITE);
         paint.setTextSize(44);
-        canvas.drawText(current.getName(), cx, 175, paint);
+        canvas.drawText(current.getName(), cx, 160, paint);
+
+        // Draw Custom Character Portrait Badge
+        drawCharacterPortrait(canvas, current, cx, cy - 80);
 
         // Navigation Arrows ◄ and ►
         paint.setColor(Color.YELLOW);
-        paint.setTextSize(55);
-        canvas.drawText("◄", cx - 200, cy - 20, paint);
-        canvas.drawText("►", cx + 200, cy - 20, paint);
+        paint.setTextSize(60);
+        canvas.drawText("◄", cx - 195, cy - 60, paint);
+        canvas.drawText("►", cx + 195, cy - 60, paint);
 
         // Stats Display
         paint.setTextSize(32);
         paint.setColor(Color.WHITE);
-        canvas.drawText("POWER LEVEL: " + current.getPowerLevel() + " / 10", cx, cy - 40, paint);
-        canvas.drawText("HEALTH: " + current.getMaxHealth() + " HP", cx, cy, paint);
-        canvas.drawText("ATTACK DAMAGE: " + current.getBaseDamage(), cx, cy + 40, paint);
+        canvas.drawText("POWER LEVEL: " + current.getPowerLevel() + " / 10", cx, cy + 10, paint);
+        canvas.drawText("HEALTH: " + current.getMaxHealth() + " HP", cx, cy + 45, paint);
+        canvas.drawText("ATTACK DAMAGE: " + current.getBaseDamage(), cx, cy + 80, paint);
 
         // Action Buttons at Bottom
         if (!current.isUnlocked()) {
             // UNLOCK BUTTON
             paint.setColor(coins >= current.getUnlockCost() ? Color.rgb(0, 200, 100) : Color.GRAY);
-            canvas.drawRoundRect(cx - 200, cy + 120, cx + 200, cy + 190, 20, 20, paint);
+            canvas.drawRoundRect(cx - 200, cy + 125, cx + 200, cy + 190, 20, 20, paint);
 
             paint.setColor(Color.WHITE);
             paint.setTextSize(36);
-            canvas.drawText("UNLOCK (" + current.getUnlockCost() + " COINS)", cx, cy + 165, paint);
+            canvas.drawText("UNLOCK (" + current.getUnlockCost() + " COINS)", cx, cy + 168, paint);
         } else {
             // UPGRADE POWER BUTTON
             int upCost = current.getUpgradeCost();
             paint.setColor(coins >= upCost && current.getPowerLevel() < 10 ? Color.rgb(220, 140, 0) : Color.GRAY);
-            canvas.drawRoundRect(cx - 220, cy + 110, cx + 220, cy + 170, 18, 18, paint);
+            canvas.drawRoundRect(cx - 220, cy + 115, cx + 220, cy + 175, 18, 18, paint);
 
             paint.setColor(Color.WHITE);
             paint.setTextSize(30);
             String upText = current.getPowerLevel() < 10 ? "UPGRADE POWER (" + upCost + " COINS)" : "MAX POWER!";
-            canvas.drawText(upText, cx, cy + 148, paint);
+            canvas.drawText(upText, cx, cy + 153, paint);
 
             // FIGHT / SELECT BUTTON
             boolean isSelected = WweRosterStorage.getSelectedHeroId(getContext()).equals(current.getId());
             paint.setColor(isSelected ? Color.rgb(0, 180, 250) : Color.rgb(0, 220, 120));
-            canvas.drawRoundRect(cx - 220, cy + 190, cx + 220, cy + 250, 18, 18, paint);
+            canvas.drawRoundRect(cx - 220, cy + 195, cx + 220, cy + 255, 18, 18, paint);
 
             paint.setColor(Color.WHITE);
             paint.setTextSize(34);
-            canvas.drawText(isSelected ? "SELECTED - FIGHT NOW!" : "SELECT FOR BATTLE", cx, cy + 230, paint);
+            canvas.drawText(isSelected ? "SELECTED - FIGHT NOW!" : "SELECT FOR BATTLE", cx, cy + 235, paint);
         }
 
         // BACK TO MENU BUTTON
         paint.setColor(Color.rgb(80, 80, 100));
-        canvas.drawRoundRect(cx - 160, cy + 270, cx + 160, cy + 325, 15, 15, paint);
+        canvas.drawRoundRect(cx - 160, cy + 275, cx + 160, cy + 330, 15, 15, paint);
 
         paint.setColor(Color.WHITE);
         paint.setTextSize(30);
-        canvas.drawText("BACK", cx, cy + 307, paint);
+        canvas.drawText("BACK", cx, cy + 312, paint);
 
         paint.setTextAlign(Paint.Align.LEFT);
+    }
+
+    private void drawCharacterPortrait(Canvas canvas, WweSuperstar superstar, float x, float y) {
+        // Portrait Circular Badge Base
+        paint.setColor(Color.rgb(20, 20, 35));
+        canvas.drawCircle(x, y, 70, paint);
+
+        paint.setColor(superstar.getPrimaryColor());
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(6);
+        canvas.drawCircle(x, y, 68, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        String id = superstar.getId();
+
+        if (id.equals("roman")) {
+            // ROMAN REIGNS: Tribal Chief - Long Dark Hair & Gold Vest
+            paint.setColor(Color.rgb(255, 205, 170));
+            canvas.drawCircle(x, y - 5, 30, paint);
+
+            paint.setColor(Color.rgb(20, 20, 25));
+            canvas.drawRect(x - 35, y - 35, x - 25, y + 25, paint);
+            canvas.drawRect(x + 25, y - 35, x + 35, y + 25, paint);
+
+            paint.setColor(Color.rgb(0, 180, 255));
+            canvas.drawRect(x - 32, y + 15, x + 32, y + 55, paint);
+
+            paint.setColor(Color.YELLOW);
+            canvas.drawCircle(x, y + 32, 10, paint);
+
+        } else if (id.equals("cena")) {
+            // JOHN CENA: Green Cap & Red T-Shirt
+            paint.setColor(Color.rgb(255, 205, 170));
+            canvas.drawCircle(x, y - 2, 30, paint);
+
+            paint.setColor(Color.rgb(0, 200, 80));
+            canvas.drawRect(x - 32, y - 32, x + 32, y - 10, paint);
+
+            paint.setColor(Color.rgb(230, 40, 40));
+            canvas.drawRect(x - 32, y + 15, x + 32, y + 55, paint);
+
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(20);
+            paint.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText("CENA", x, y + 38, paint);
+
+        } else if (id.equals("rock")) {
+            // THE ROCK: Shaved Head, Sunglasses, Brahma Bull Logo
+            paint.setColor(Color.rgb(240, 190, 150));
+            canvas.drawCircle(x, y - 5, 30, paint);
+
+            paint.setColor(Color.BLACK);
+            canvas.drawRect(x - 22, y - 12, x + 22, y - 2, paint);
+
+            paint.setColor(Color.rgb(30, 30, 30));
+            canvas.drawRect(x - 32, y + 15, x + 32, y + 55, paint);
+
+            paint.setColor(Color.rgb(255, 180, 0));
+            canvas.drawCircle(x, y + 35, 12, paint);
+
+        } else if (id.equals("undertaker")) {
+            // UNDERTAKER: Dark Hat & Purple Coat
+            paint.setColor(Color.rgb(230, 180, 150));
+            canvas.drawCircle(x, y, 30, paint);
+
+            paint.setColor(Color.BLACK);
+            canvas.drawRect(x - 45, y - 35, x + 45, y - 22, paint);
+            canvas.drawRect(x - 25, y - 48, x + 25, y - 35, paint);
+
+            paint.setColor(Color.rgb(120, 20, 160));
+            canvas.drawRect(x - 32, y + 20, x + 32, y + 55, paint);
+        }
     }
 
     @Override
@@ -164,14 +239,14 @@ public class WweRosterView extends View {
             WweSuperstar current = roster.get(selectedIndex);
 
             // Left Arrow ◄
-            if (x >= cx - 240 && x <= cx - 160 && y >= cy - 80 && y <= cy + 40) {
+            if (x >= cx - 240 && x <= cx - 160 && y >= cy - 110 && y <= cy + 20) {
                 selectedIndex = (selectedIndex - 1 + roster.size()) % roster.size();
                 invalidate();
                 return true;
             }
 
             // Right Arrow ►
-            if (x >= cx + 160 && x <= cx + 240 && y >= cy - 80 && y <= cy + 40) {
+            if (x >= cx + 160 && x <= cx + 240 && y >= cy - 110 && y <= cy + 20) {
                 selectedIndex = (selectedIndex + 1) % roster.size();
                 invalidate();
                 return true;
@@ -179,7 +254,7 @@ public class WweRosterView extends View {
 
             // UNLOCK Button
             if (!current.isUnlocked()) {
-                if (x >= cx - 200 && x <= cx + 200 && y >= cy + 120 && y <= cy + 190) {
+                if (x >= cx - 200 && x <= cx + 200 && y >= cy + 125 && y <= cy + 190) {
                     if (coins >= current.getUnlockCost()) {
                         WweRosterStorage.addCoins(getContext(), -current.getUnlockCost());
                         WweRosterStorage.saveSuperstarState(getContext(), current.getId(), true, current.getPowerLevel());
@@ -190,7 +265,7 @@ public class WweRosterView extends View {
                 }
             } else {
                 // UPGRADE POWER Button
-                if (x >= cx - 220 && x <= cx + 220 && y >= cy + 110 && y <= cy + 170) {
+                if (x >= cx - 220 && x <= cx + 220 && y >= cy + 115 && y <= cy + 175) {
                     int upCost = current.getUpgradeCost();
                     if (coins >= upCost && current.getPowerLevel() < 10) {
                         WweRosterStorage.addCoins(getContext(), -upCost);
@@ -201,7 +276,7 @@ public class WweRosterView extends View {
                 }
 
                 // FIGHT / SELECT Button
-                if (x >= cx - 220 && x <= cx + 220 && y >= cy + 190 && y <= cy + 250) {
+                if (x >= cx - 220 && x <= cx + 220 && y >= cy + 195 && y <= cy + 255) {
                     WweRosterStorage.setSelectedHeroId(getContext(), current.getId());
                     if (listener != null) {
                         listener.onStartFight();
@@ -211,7 +286,7 @@ public class WweRosterView extends View {
             }
 
             // BACK Button
-            if (x >= cx - 160 && x <= cx + 160 && y >= cy + 270 && y <= cy + 325) {
+            if (x >= cx - 160 && x <= cx + 160 && y >= cy + 275 && y <= cy + 330) {
                 if (listener != null) {
                     listener.onBackToSelect();
                 }

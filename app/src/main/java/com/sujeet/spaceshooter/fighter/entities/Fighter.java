@@ -137,17 +137,33 @@ public class Fighter {
         paint.setColor(Color.rgb(255, 205, 170));
         canvas.drawCircle(x, y - height / 2 + 20, 22, paint);
 
-        // Headband / Visor
-        paint.setColor(isPlayer ? Color.RED : Color.YELLOW);
-        canvas.drawRect(x - 22, y - height / 2 + 12, x + 22, y - height / 2 + 20, paint);
+        // Character Specific Headgear / Hair
+        if (name.contains("CENA")) {
+            // Green Cap
+            paint.setColor(Color.rgb(0, 200, 80));
+            canvas.drawRect(x - 22, y - height / 2 + 2, x + 22, y - height / 2 + 16, paint);
+        } else if (name.contains("ROMAN")) {
+            // Long Black Hair
+            paint.setColor(Color.rgb(20, 20, 25));
+            canvas.drawRect(x - 26, y - height / 2 + 10, x - 18, y - height / 2 + 45, paint);
+            canvas.drawRect(x + 18, y - height / 2 + 10, x + 26, y - height / 2 + 45, paint);
+        } else if (name.contains("UNDERTAKER")) {
+            // Dark Hat
+            paint.setColor(Color.BLACK);
+            canvas.drawRect(x - 30, y - height / 2 + 5, x + 30, y - height / 2 + 15, paint);
+        } else if (name.contains("ROCK")) {
+            // Sunglasses
+            paint.setColor(Color.BLACK);
+            canvas.drawRect(x - 16, y - height / 2 + 16, x + 16, y - height / 2 + 23, paint);
+        }
 
         // Torso / Gi
         paint.setColor(bodyColor);
         canvas.drawRect(x - 25, y - height / 2 + 42, x + 25, y + 20, paint);
 
-        // Name on Chest
+        // Name Tag on Vest
         paint.setColor(Color.WHITE);
-        paint.setTextSize(16);
+        paint.setTextSize(15);
         paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText(name.split(" ")[0], x, y - 5, paint);
         paint.setTextAlign(Paint.Align.LEFT);
