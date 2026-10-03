@@ -219,17 +219,28 @@ public class FightView extends View {
         super.onDraw(canvas);
 
         synchronized (lock) {
-            // Sunset Dojo Background
-            canvas.drawColor(Color.rgb(30, 20, 45));
-
             float floorY = getHeight() - 250;
 
-            // Floor Grid
-            paint.setColor(Color.rgb(80, 50, 100));
+            // Sunset Arena Background
+            canvas.drawColor(Color.rgb(25, 15, 40));
+
+            // Background Sunset Glow Gradient Effect
+            paint.setColor(Color.rgb(180, 50, 80));
+            canvas.drawRect(0, floorY - 350, getWidth(), floorY + 20, paint);
+
+            paint.setColor(Color.rgb(230, 100, 50));
+            canvas.drawRect(0, floorY - 200, getWidth(), floorY + 20, paint);
+
+            // Arena Pillars / Torches
+            drawPillars(canvas, floorY);
+
+            // Arena Floor Mat with Neon Boundary
+            paint.setColor(Color.rgb(40, 25, 60));
             canvas.drawRect(0, floorY + 20, getWidth(), getHeight(), paint);
 
-            paint.setColor(Color.rgb(180, 120, 220));
-            canvas.drawRect(0, floorY + 15, getWidth(), floorY + 20, paint);
+            // Neon Ring Line
+            paint.setColor(Color.rgb(0, 220, 255));
+            canvas.drawRect(0, floorY + 12, getWidth(), floorY + 20, paint);
 
             // Draw Energy Blasts
             for (EnergyBlast blast : blasts) {
@@ -243,7 +254,7 @@ public class FightView extends View {
             // Draw HUD (Health Bars & Round Timer)
             drawHUD(canvas);
 
-            // Draw On-Screen Touch Controls
+            // Draw Glossy Arcade Action Buttons
             drawControls(canvas);
 
             // Match Result Overlay
@@ -253,38 +264,69 @@ public class FightView extends View {
         }
     }
 
+    private void drawPillars(Canvas canvas, float floorY) {
+        // Left Torch Pillar
+        paint.setColor(Color.rgb(80, 80, 95));
+        canvas.drawRect(50, floorY - 300, 90, floorY + 20, paint);
+        paint.setColor(Color.rgb(255, 140, 0));
+        canvas.drawCircle(70, floorY - 315, 18, paint);
+        paint.setColor(Color.YELLOW);
+        canvas.drawCircle(70, floorY - 315, 10, paint);
+
+        // Right Torch Pillar
+        paint.setColor(Color.rgb(80, 80, 95));
+        canvas.drawRect(getWidth() - 90, floorY - 300, getWidth() - 50, floorY + 20, paint);
+        paint.setColor(Color.rgb(255, 140, 0));
+        canvas.drawCircle(getWidth() - 70, floorY - 315, 18, paint);
+        paint.setColor(Color.YELLOW);
+        canvas.drawCircle(getWidth() - 70, floorY - 315, 10, paint);
+    }
+
     private void drawHUD(Canvas canvas) {
         float barWidth = getWidth() * 0.35f;
 
         // Player 1 Health Bar (Top-Left)
+        paint.setColor(Color.BLACK);
+        canvas.drawRoundRect(26, 36, 34 + barWidth, 79, 12, 12, paint);
+
         paint.setColor(Color.DKGRAY);
         canvas.drawRoundRect(30, 40, 30 + barWidth, 75, 10, 10, paint);
 
         float p1Pct = (float) player.getHealth() / player.getMaxHealth();
-        paint.setColor(Color.GREEN);
+        paint.setColor(Color.rgb(0, 230, 120)); // Cyan-Green
         canvas.drawRoundRect(30, 40, 30 + barWidth * p1Pct, 75, 10, 10, paint);
 
-        paint.setColor(Color.WHITE);
+        paint.setColor(Color.CYAN);
         paint.setTextSize(26);
         paint.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText("P1 HERO", 30, 32, paint);
+        canvas.drawText("P1 HERO", 30, 30, paint);
 
         // Player 2 Health Bar (Top-Right)
+        paint.setColor(Color.BLACK);
+        canvas.drawRoundRect(getWidth() - 34 - barWidth, 36, getWidth() - 26, 79, 12, 12, paint);
+
         paint.setColor(Color.DKGRAY);
         canvas.drawRoundRect(getWidth() - 30 - barWidth, 40, getWidth() - 30, 75, 10, 10, paint);
 
         float p2Pct = (float) enemyAi.getHealth() / enemyAi.getMaxHealth();
-        paint.setColor(Color.RED);
+        paint.setColor(Color.rgb(240, 40, 40)); // Red
         canvas.drawRoundRect(getWidth() - 30 - barWidth * p2Pct, 40, getWidth() - 30, 75, 10, 10, paint);
 
         paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("P2 ENEMY", getWidth() - 30, 32, paint);
+        paint.setColor(Color.rgb(255, 100, 100));
+        canvas.drawText("P2 ENEMY", getWidth() - 30, 30, paint);
 
-        // Round Timer (Top-Center)
+        // VS Emblem & Round Timer (Top-Center)
+        float cx = getWidth() / 2f;
         paint.setTextAlign(Paint.Align.CENTER);
+
+        paint.setColor(Color.rgb(255, 215, 0)); // Gold VS
+        paint.setTextSize(30);
+        canvas.drawText("VS", cx, 35, paint);
+
         paint.setColor(Color.YELLOW);
-        paint.setTextSize(42);
-        canvas.drawText(String.valueOf(roundTimer), getWidth() / 2f, 65, paint);
+        paint.setTextSize(44);
+        canvas.drawText(String.valueOf(roundTimer), cx, 75, paint);
 
         paint.setTextAlign(Paint.Align.LEFT);
     }
@@ -292,54 +334,56 @@ public class FightView extends View {
     private void drawControls(Canvas canvas) {
         float cy = getHeight() - 110;
 
-        // Left / Right Movement Buttons
-        paint.setColor(Color.argb(140, 50, 60, 90));
-        canvas.drawCircle(100, cy, 50, paint);
-        canvas.drawCircle(230, cy, 50, paint);
-
-        paint.setColor(Color.WHITE);
-        paint.setTextSize(35);
-        paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("◄", 100, cy + 12, paint);
-        canvas.drawText("►", 230, cy + 12, paint);
+        // Left / Right Movement D-Pad Buttons
+        drawArcadeButton(canvas, 100, cy, 52, Color.rgb(0, 180, 220), "◄");
+        drawArcadeButton(canvas, 230, cy, 52, Color.rgb(0, 180, 220), "►");
 
         // Action Buttons: P (Punch), K (Kick), SP (Special)
         float rx = getWidth() - 320;
         float rx2 = getWidth() - 190;
         float rx3 = getWidth() - 70;
 
-        // PUNCH (P)
-        paint.setColor(Color.argb(160, 220, 50, 50));
-        canvas.drawCircle(rx, cy, 45, paint);
-        paint.setColor(Color.WHITE);
-        canvas.drawText("P", rx, cy + 12, paint);
-
-        // KICK (K)
-        paint.setColor(Color.argb(160, 220, 150, 0));
-        canvas.drawCircle(rx2, cy, 45, paint);
-        paint.setColor(Color.WHITE);
-        canvas.drawText("K", rx2, cy + 12, paint);
-
-        // SPECIAL (SP!)
-        paint.setColor(Color.argb(180, 0, 200, 255));
-        canvas.drawCircle(rx3, cy, 50, paint);
-        paint.setColor(Color.WHITE);
-        canvas.drawText("SP", rx3, cy + 12, paint);
+        drawArcadeButton(canvas, rx, cy, 48, Color.rgb(230, 40, 40), "P");
+        drawArcadeButton(canvas, rx2, cy, 48, Color.rgb(240, 150, 0), "K");
+        drawArcadeButton(canvas, rx3, cy, 54, Color.rgb(0, 220, 255), "SP");
 
         // Exit / Back to Mode Select Button
-        paint.setColor(Color.argb(180, 80, 80, 100));
-        canvas.drawRoundRect(20, 90, 140, 140, 10, 10, paint);
-        paint.setTextSize(24);
-        canvas.drawText("EXIT", 80, 122, paint);
+        paint.setColor(Color.argb(180, 50, 60, 80));
+        canvas.drawRoundRect(20, 90, 140, 138, 12, 12, paint);
+
+        paint.setColor(Color.CYAN);
+        paint.setTextSize(22);
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("EXIT", 80, 120, paint);
 
         paint.setTextAlign(Paint.Align.LEFT);
+    }
+
+    private void drawArcadeButton(Canvas canvas, float x, float y, float r, int mainColor, String label) {
+        // Outer Glow Ring
+        paint.setColor(Color.argb(100, Color.red(mainColor), Color.green(mainColor), Color.blue(mainColor)));
+        canvas.drawCircle(x, y, r + 6, paint);
+
+        // Bevel Rim
+        paint.setColor(Color.rgb(30, 35, 50));
+        canvas.drawCircle(x, y, r, paint);
+
+        // Inner Core
+        paint.setColor(mainColor);
+        canvas.drawCircle(x, y, r - 6, paint);
+
+        // Label Text
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(r * 0.7f);
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText(label, x, y + (r * 0.25f), paint);
     }
 
     private void drawResult(Canvas canvas) {
         float cx = getWidth() / 2f;
         float cy = getHeight() / 2f;
 
-        paint.setColor(Color.argb(200, 0, 0, 0));
+        paint.setColor(Color.argb(220, 0, 0, 0));
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
 
         paint.setTextAlign(Paint.Align.CENTER);
