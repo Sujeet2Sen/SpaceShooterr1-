@@ -9,9 +9,13 @@ public class Fighter {
 
     private float x;
     private float y;
+    private String name = "HERO";
     private int health = 100;
-    private final int maxHealth = 100;
+    private int maxHealth = 100;
+    private int baseDamage = 10;
+    private int color = Color.rgb(0, 180, 255);
     private final boolean isPlayer;
+
     private FighterState state = FighterState.IDLE;
     private int actionTimer = 0;
     private final float width = 90;
@@ -22,6 +26,16 @@ public class Fighter {
         this.x = x;
         this.y = y;
         this.isPlayer = isPlayer;
+    }
+
+    public void applySuperstar(WweSuperstar superstar) {
+        if (superstar != null) {
+            this.name = superstar.getName();
+            this.maxHealth = superstar.getMaxHealth();
+            this.health = this.maxHealth;
+            this.baseDamage = superstar.getBaseDamage();
+            this.color = superstar.getPrimaryColor();
+        }
     }
 
     public void update(float opponentX) {
@@ -92,6 +106,10 @@ public class Fighter {
         return false;
     }
 
+    public int getAttackDamage(boolean isKick) {
+        return isKick ? (baseDamage + 4) : baseDamage;
+    }
+
     public RectF getHitBox() {
         float reach = 0;
         if (state == FighterState.PUNCH) reach = 55;
@@ -112,20 +130,27 @@ public class Fighter {
         paint.setColor(Color.argb(80, 0, 0, 0));
         canvas.drawOval(x - 45, y + height / 2 - 10, x + 45, y + height / 2 + 10, paint);
 
-        int bodyColor = isPlayer ? Color.rgb(0, 180, 255) : Color.rgb(220, 30, 30);
+        int bodyColor = color;
         if (state == FighterState.HIT) bodyColor = Color.WHITE;
 
         // Head
         paint.setColor(Color.rgb(255, 205, 170));
         canvas.drawCircle(x, y - height / 2 + 20, 22, paint);
 
-        // Headband
+        // Headband / Visor
         paint.setColor(isPlayer ? Color.RED : Color.YELLOW);
         canvas.drawRect(x - 22, y - height / 2 + 12, x + 22, y - height / 2 + 20, paint);
 
         // Torso / Gi
         paint.setColor(bodyColor);
         canvas.drawRect(x - 25, y - height / 2 + 42, x + 25, y + 20, paint);
+
+        // Name on Chest
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(16);
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText(name.split(" ")[0], x, y - 5, paint);
+        paint.setTextAlign(Paint.Align.LEFT);
 
         // Arms & Punching Pose
         paint.setColor(Color.rgb(255, 205, 170));
@@ -168,6 +193,10 @@ public class Fighter {
 
     public int getMaxHealth() {
         return maxHealth;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public FighterState getState() {

@@ -6,14 +6,15 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.sujeet.spaceshooter.fighter.ui.FightView;
+import com.sujeet.spaceshooter.fighter.ui.WweRosterView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private GameSelectView gameSelectView;
     private GameView spaceView;
     private FightView fightView;
+    private WweRosterView rosterView;
 
-    private int activeMode = 0; // 0 = Select, 1 = Space, 2 = Fighter
+    private int activeMode = 0; // 0 = Select, 1 = Space, 2 = Roster, 3 = Fight
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,7 +28,8 @@ public class MainActivity extends AppCompatActivity {
                 if (activeMode == 1 && spaceView != null && spaceView.handleBackPressed()) {
                     return;
                 }
-                if (activeMode == 2 && fightView != null && fightView.handleBackPressed()) {
+                if (activeMode == 3 && fightView != null && fightView.handleBackPressed()) {
+                    showWweRoster();
                     return;
                 }
                 if (activeMode != 0) {
@@ -42,6 +44,54 @@ public class MainActivity extends AppCompatActivity {
 
     private void showGameSelect() {
         activeMode = 0;
+        cleanupViews();
+        GameSelectView gameSelectView = new GameSelectView(this, new GameSelectView.OnGameSelectedListener() {
+            @Override
+            public void onSelectSpaceShooter() {
+                launchSpaceShooter();
+            }
+
+            @Override
+            public void onSelectStreetFighter() {
+                showWweRoster();
+            }
+        });
+        setContentView(gameSelectView);
+    }
+
+    private void showWweRoster() {
+        activeMode = 2;
+        cleanupViews();
+        rosterView = new WweRosterView(this, new WweRosterView.OnRosterActionListener() {
+            @Override
+            public void onStartFight() {
+                launchStreetFighter();
+            }
+
+            @Override
+            public void onBackToSelect() {
+                showGameSelect();
+            }
+        });
+        setContentView(rosterView);
+    }
+
+    private void launchSpaceShooter() {
+        activeMode = 1;
+        cleanupViews();
+        spaceView = new GameView(this);
+        setContentView(spaceView);
+    }
+
+    private void launchStreetFighter() {
+        activeMode = 3;
+        cleanupViews();
+        fightView = new FightView(this);
+        fightView.onExitListener = this::showWweRoster;
+        setContentView(fightView);
+    }
+
+    private void cleanupViews() {
         if (spaceView != null) {
             spaceView.stopGame();
             spaceView = null;
@@ -50,31 +100,7 @@ public class MainActivity extends AppCompatActivity {
             fightView.stopGame();
             fightView = null;
         }
-        gameSelectView = new GameSelectView(this, new GameSelectView.OnGameSelectedListener() {
-            @Override
-            public void onSelectSpaceShooter() {
-                launchSpaceShooter();
-            }
-
-            @Override
-            public void onSelectStreetFighter() {
-                launchStreetFighter();
-            }
-        });
-        setContentView(gameSelectView);
-    }
-
-    private void launchSpaceShooter() {
-        activeMode = 1;
-        spaceView = new GameView(this);
-        setContentView(spaceView);
-    }
-
-    private void launchStreetFighter() {
-        activeMode = 2;
-        fightView = new FightView(this);
-        fightView.onExitListener = this::showGameSelect;
-        setContentView(fightView);
+        rosterView = null;
     }
 
     @Override

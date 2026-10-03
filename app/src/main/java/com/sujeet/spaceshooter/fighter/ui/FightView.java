@@ -10,9 +10,11 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 
+import com.sujeet.spaceshooter.fighter.data.WweRosterStorage;
 import com.sujeet.spaceshooter.fighter.entities.EnergyBlast;
 import com.sujeet.spaceshooter.fighter.entities.Fighter;
 import com.sujeet.spaceshooter.fighter.entities.FighterState;
+import com.sujeet.spaceshooter.fighter.entities.WweSuperstar;
 import com.sujeet.spaceshooter.utils.SoundManager;
 
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ public class FightView extends View {
     private int frameCounter = 0;
     private int aiDecisionTimer = 0;
     private boolean fightOver = false;
+    private boolean rewardedCoins = false;
     private String matchResult = "";
 
     private int specialMeter = 0; // 0 to 100 Finisher Meter
@@ -62,11 +65,15 @@ public class FightView extends View {
             player = new Fighter(p1X, floorY, true);
             enemyAi = new Fighter(p2X, floorY, false);
 
+            WweSuperstar superstar = WweRosterStorage.getSelectedSuperstar(getContext());
+            player.applySuperstar(superstar);
+
             blasts.clear();
             roundTimer = 60;
             frameCounter = 0;
             specialMeter = 0;
             fightOver = false;
+            rewardedCoins = false;
             matchResult = "";
         }
     }
@@ -108,7 +115,8 @@ public class FightView extends View {
                 roundTimer = 0;
                 fightOver = true;
                 if (player.getHealth() > enemyAi.getHealth()) {
-                    matchResult = "TIME UP! YOU WIN!";
+                    matchResult = "TIME UP! YOU WIN! (+150 COINS)";
+                    awardVictoryCoins();
                 } else if (enemyAi.getHealth() > player.getHealth()) {
                     matchResult = "TIME UP! YOU LOSE!";
                 } else {
@@ -134,7 +142,7 @@ public class FightView extends View {
             if (blast.getBounds().intersects(player.getBounds().left, player.getBounds().top, player.getBounds().right, player.getBounds().bottom)) {
                 iterator.remove();
                 SoundManager.playHit();
-                if (player.takeDamage(15)) {
+                if (player.takeDamage(18)) {
                     fightOver = true;
                     matchResult = "K.O.! YOU LOSE!";
                 }
@@ -145,9 +153,10 @@ public class FightView extends View {
                 iterator.remove();
                 SoundManager.playHit();
                 specialMeter = Math.min(100, specialMeter + 25);
-                if (enemyAi.takeDamage(15)) {
+                if (enemyAi.takeDamage(player.getAttackDamage(false) + 12)) {
                     fightOver = true;
-                    matchResult = "K.O.! YOU WIN!";
+                    matchResult = "K.O.! YOU WIN! (+150 COINS)";
+                    awardVictoryCoins();
                 }
                 continue;
             }
@@ -157,20 +166,29 @@ public class FightView extends View {
             }
         }
 
-        // Melee Hits check (Punch & Kick)
+        // Melee Hits check
         checkMeleeHits();
+    }
+
+    private void awardVictoryCoins() {
+        if (!rewardedCoins) {
+            rewardedCoins = true;
+            WweRosterStorage.addCoins(getContext(), 150);
+        }
     }
 
     private void checkMeleeHits() {
         // Player attacks Enemy AI
         if (player.getState() == FighterState.PUNCH || player.getState() == FighterState.KICK) {
             if (RectF.intersects(player.getHitBox(), enemyAi.getBounds())) {
-                int dmg = player.getState() == FighterState.KICK ? 14 : 9;
+                boolean isKick = player.getState() == FighterState.KICK;
+                int dmg = player.getAttackDamage(isKick);
                 SoundManager.playHit();
                 specialMeter = Math.min(100, specialMeter + 10);
                 if (enemyAi.takeDamage(dmg)) {
                     fightOver = true;
-                    matchResult = "K.O.! YOU WIN!";
+                    matchResult = "K.O.! YOU WIN! (+150 COINS)";
+                    awardVictoryCoins();
                 }
             }
         }
@@ -294,7 +312,7 @@ public class FightView extends View {
         paint.setColor(Color.CYAN);
         paint.setTextSize(26);
         paint.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText("P1 HERO", 30, 30, paint);
+        canvas.drawText(player.getName(), 30, 30, paint);
 
         // Player 2 Health Bar (Top-Right)
         paint.setColor(Color.BLACK);
@@ -348,7 +366,7 @@ public class FightView extends View {
 
         paint.setColor(Color.CYAN);
         paint.setTextSize(22);
-        canvas.drawText("EXIT", 80, 120, paint);
+        canvas.drawText("ROSTER", 80, 120, paint);
 
         // On-Screen Gesture Guide Hints
         paint.setColor(Color.argb(150, 200, 220, 255));
@@ -398,7 +416,7 @@ public class FightView extends View {
                     return true;
                 }
 
-                // EXIT Button
+                // ROSTER / EXIT Button
                 if (x >= 20 && x <= 140 && y >= 90 && y <= 140) {
                     if (onExitListener != null) {
                         onExitListener.run();
