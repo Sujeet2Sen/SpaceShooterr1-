@@ -53,7 +53,7 @@ public class FightView extends View {
 
     private void initFighters() {
         synchronized (lock) {
-            float floorY = getHeight() > 0 ? getHeight() - 250 : 1200;
+            float floorY = getHeight() > 0 ? getHeight() * 0.58f : 900f;
             float p1X = getWidth() > 0 ? getWidth() * 0.25f : 300;
             float p2X = getWidth() > 0 ? getWidth() * 0.75f : 800;
 
@@ -90,7 +90,7 @@ public class FightView extends View {
     private void updateFight() {
         if (fightOver) return;
 
-        float floorY = getHeight() - 250;
+        float floorY = getHeight() > 0 ? getHeight() * 0.58f : 900f;
         if (player.getY() != floorY && floorY > 0) {
             player.setPosition(getWidth() * 0.25f, floorY);
             enemyAi.setPosition(getWidth() * 0.75f, floorY);
@@ -219,7 +219,7 @@ public class FightView extends View {
         super.onDraw(canvas);
 
         synchronized (lock) {
-            float floorY = getHeight() - 250;
+            float floorY = getHeight() > 0 ? getHeight() * 0.58f : 900f;
 
             // Sunset Arena Background
             canvas.drawColor(Color.rgb(25, 15, 40));
@@ -428,38 +428,52 @@ public class FightView extends View {
                     return true;
                 }
 
-                // Left Movement
+                // Left Movement Button
                 if (Math.hypot(x - 100, y - cy) <= 60) {
                     movingLeft = true;
                     return true;
                 }
 
-                // Right Movement
+                // Right Movement Button
                 if (Math.hypot(x - 230, y - cy) <= 60) {
                     movingRight = true;
                     return true;
                 }
 
-                // Punch (P)
+                // Punch (P) Button
                 float rx = getWidth() - 320;
                 if (Math.hypot(x - rx, y - cy) <= 55) {
                     player.punch();
                     return true;
                 }
 
-                // Kick (K)
+                // Kick (K) Button
                 float rx2 = getWidth() - 190;
                 if (Math.hypot(x - rx2, y - cy) <= 55) {
                     player.kick();
                     return true;
                 }
 
-                // Special Attack (SP)
+                // Special Attack (SP) Button
                 float rx3 = getWidth() - 70;
                 if (Math.hypot(x - rx3, y - cy) <= 60) {
                     player.special();
                     blasts.add(new EnergyBlast(player.getX() + 50, player.getY() - 20, true));
                     SoundManager.playShoot();
+                    return true;
+                }
+
+                // Tap anywhere on Right Screen Area to Attack!
+                if (x >= getWidth() * 0.45f && y < getHeight() - 180f) {
+                    if (y < getHeight() * 0.35f) {
+                        player.special();
+                        blasts.add(new EnergyBlast(player.getX() + 50, player.getY() - 20, true));
+                        SoundManager.playShoot();
+                    } else if (y < getHeight() * 0.48f) {
+                        player.punch();
+                    } else {
+                        player.kick();
+                    }
                     return true;
                 }
 
