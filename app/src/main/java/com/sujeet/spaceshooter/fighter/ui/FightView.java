@@ -35,8 +35,10 @@ public class FightView extends View {
     private boolean fightOver = false;
     private String matchResult = "";
 
-    private boolean movingLeft = false;
-    private boolean movingRight = false;
+    private int specialMeter = 0; // 0 to 100 Finisher Meter
+
+    private float touchStartX = 0;
+    private boolean isSwiping = false;
 
     private boolean running = true;
     private Thread gameThread;
@@ -53,9 +55,9 @@ public class FightView extends View {
 
     private void initFighters() {
         synchronized (lock) {
-            float floorY = getHeight() > 0 ? getHeight() * 0.58f : 900f;
-            float p1X = getWidth() > 0 ? getWidth() * 0.25f : 300;
-            float p2X = getWidth() > 0 ? getWidth() * 0.75f : 800;
+            float floorY = getHeight() > 0 ? getHeight() * 0.65f : 950f;
+            float p1X = getWidth() > 0 ? getWidth() * 0.28f : 300;
+            float p2X = getWidth() > 0 ? getWidth() * 0.72f : 800;
 
             player = new Fighter(p1X, floorY, true);
             enemyAi = new Fighter(p2X, floorY, false);
@@ -63,6 +65,7 @@ public class FightView extends View {
             blasts.clear();
             roundTimer = 60;
             frameCounter = 0;
+            specialMeter = 0;
             fightOver = false;
             matchResult = "";
         }
@@ -90,10 +93,10 @@ public class FightView extends View {
     private void updateFight() {
         if (fightOver) return;
 
-        float floorY = getHeight() > 0 ? getHeight() * 0.58f : 900f;
+        float floorY = getHeight() > 0 ? getHeight() * 0.65f : 950f;
         if (player.getY() != floorY && floorY > 0) {
-            player.setPosition(getWidth() * 0.25f, floorY);
-            enemyAi.setPosition(getWidth() * 0.75f, floorY);
+            player.setPosition(getWidth() * 0.28f, floorY);
+            enemyAi.setPosition(getWidth() * 0.72f, floorY);
         }
 
         // Round timer
@@ -113,10 +116,6 @@ public class FightView extends View {
                 }
             }
         }
-
-        // Player Movement
-        if (movingLeft) player.move(-8, getWidth());
-        if (movingRight) player.move(8, getWidth());
 
         // Update Fighters
         player.update(enemyAi.getX());
@@ -145,6 +144,7 @@ public class FightView extends View {
             if (blast.getBounds().intersects(enemyAi.getBounds().left, enemyAi.getBounds().top, enemyAi.getBounds().right, enemyAi.getBounds().bottom)) {
                 iterator.remove();
                 SoundManager.playHit();
+                specialMeter = Math.min(100, specialMeter + 25);
                 if (enemyAi.takeDamage(15)) {
                     fightOver = true;
                     matchResult = "K.O.! YOU WIN!";
@@ -165,8 +165,9 @@ public class FightView extends View {
         // Player attacks Enemy AI
         if (player.getState() == FighterState.PUNCH || player.getState() == FighterState.KICK) {
             if (RectF.intersects(player.getHitBox(), enemyAi.getBounds())) {
-                int dmg = player.getState() == FighterState.KICK ? 12 : 8;
+                int dmg = player.getState() == FighterState.KICK ? 14 : 9;
                 SoundManager.playHit();
+                specialMeter = Math.min(100, specialMeter + 10);
                 if (enemyAi.takeDamage(dmg)) {
                     fightOver = true;
                     matchResult = "K.O.! YOU WIN!";
@@ -191,19 +192,19 @@ public class FightView extends View {
         if (fightOver) return;
 
         aiDecisionTimer++;
-        if (aiDecisionTimer >= 20) {
+        if (aiDecisionTimer >= 18) {
             aiDecisionTimer = 0;
             float dist = Math.abs(enemyAi.getX() - player.getX());
 
-            if (dist > 220) {
-                enemyAi.move(-8, getWidth());
+            if (dist > 200) {
+                enemyAi.move(-12, getWidth());
             } else if (dist < 130) {
                 int action = random.nextInt(100);
                 if (action < 40) {
                     enemyAi.punch();
-                } else if (action < 75) {
+                } else if (action < 70) {
                     enemyAi.kick();
-                } else if (action < 90) {
+                } else if (action < 88) {
                     enemyAi.block();
                 } else {
                     enemyAi.special();
@@ -219,45 +220,43 @@ public class FightView extends View {
         super.onDraw(canvas);
 
         synchronized (lock) {
-            float floorY = getHeight() > 0 ? getHeight() * 0.58f : 900f;
+            float floorY = getHeight() > 0 ? getHeight() * 0.65f : 950f;
 
-            // Sunset Arena Background
-            canvas.drawColor(Color.rgb(25, 15, 40));
+            // Full-Screen Sunset Arena Background
+            canvas.drawColor(Color.rgb(20, 12, 35));
 
-            // Background Sunset Glow Gradient Effect
             paint.setColor(Color.rgb(180, 50, 80));
-            canvas.drawRect(0, floorY - 350, getWidth(), floorY + 20, paint);
+            canvas.drawRect(0, floorY - 380, getWidth(), floorY + 20, paint);
 
             paint.setColor(Color.rgb(230, 100, 50));
-            canvas.drawRect(0, floorY - 200, getWidth(), floorY + 20, paint);
+            canvas.drawRect(0, floorY - 220, getWidth(), floorY + 20, paint);
 
-            // Arena Pillars / Torches
+            // Torch Pillars
             drawPillars(canvas, floorY);
 
             // Arena Floor Mat with Neon Boundary
-            paint.setColor(Color.rgb(40, 25, 60));
+            paint.setColor(Color.rgb(35, 20, 55));
             canvas.drawRect(0, floorY + 20, getWidth(), getHeight(), paint);
 
-            // Neon Ring Line
             paint.setColor(Color.rgb(0, 220, 255));
             canvas.drawRect(0, floorY + 12, getWidth(), floorY + 20, paint);
 
-            // Draw Energy Blasts
+            // Energy Blasts
             for (EnergyBlast blast : blasts) {
                 blast.draw(canvas, paint);
             }
 
-            // Draw Fighters
+            // Fighters
             player.draw(canvas, paint);
             enemyAi.draw(canvas, paint);
 
-            // Draw HUD (Health Bars & Round Timer)
+            // HUD
             drawHUD(canvas);
 
-            // Draw Glossy Arcade Action Buttons
-            drawControls(canvas);
+            // Immortals Style Special Skill Bar & Controls Guide
+            drawImmortalsControls(canvas);
 
-            // Match Result Overlay
+            // Result Overlay
             if (fightOver) {
                 drawResult(canvas);
             }
@@ -265,21 +264,17 @@ public class FightView extends View {
     }
 
     private void drawPillars(Canvas canvas, float floorY) {
-        // Left Torch Pillar
         paint.setColor(Color.rgb(80, 80, 95));
-        canvas.drawRect(50, floorY - 300, 90, floorY + 20, paint);
-        paint.setColor(Color.rgb(255, 140, 0));
-        canvas.drawCircle(70, floorY - 315, 18, paint);
-        paint.setColor(Color.YELLOW);
-        canvas.drawCircle(70, floorY - 315, 10, paint);
+        canvas.drawRect(50, floorY - 320, 90, floorY + 20, paint);
+        canvas.drawRect(getWidth() - 90, floorY - 320, getWidth() - 50, floorY + 20, paint);
 
-        // Right Torch Pillar
-        paint.setColor(Color.rgb(80, 80, 95));
-        canvas.drawRect(getWidth() - 90, floorY - 300, getWidth() - 50, floorY + 20, paint);
         paint.setColor(Color.rgb(255, 140, 0));
-        canvas.drawCircle(getWidth() - 70, floorY - 315, 18, paint);
+        canvas.drawCircle(70, floorY - 335, 18, paint);
+        canvas.drawCircle(getWidth() - 70, floorY - 335, 18, paint);
+
         paint.setColor(Color.YELLOW);
-        canvas.drawCircle(getWidth() - 70, floorY - 315, 10, paint);
+        canvas.drawCircle(70, floorY - 335, 10, paint);
+        canvas.drawCircle(getWidth() - 70, floorY - 335, 10, paint);
     }
 
     private void drawHUD(Canvas canvas) {
@@ -293,7 +288,7 @@ public class FightView extends View {
         canvas.drawRoundRect(30, 40, 30 + barWidth, 75, 10, 10, paint);
 
         float p1Pct = (float) player.getHealth() / player.getMaxHealth();
-        paint.setColor(Color.rgb(0, 230, 120)); // Cyan-Green
+        paint.setColor(Color.rgb(0, 230, 120));
         canvas.drawRoundRect(30, 40, 30 + barWidth * p1Pct, 75, 10, 10, paint);
 
         paint.setColor(Color.CYAN);
@@ -309,18 +304,18 @@ public class FightView extends View {
         canvas.drawRoundRect(getWidth() - 30 - barWidth, 40, getWidth() - 30, 75, 10, 10, paint);
 
         float p2Pct = (float) enemyAi.getHealth() / enemyAi.getMaxHealth();
-        paint.setColor(Color.rgb(240, 40, 40)); // Red
+        paint.setColor(Color.rgb(240, 40, 40));
         canvas.drawRoundRect(getWidth() - 30 - barWidth * p2Pct, 40, getWidth() - 30, 75, 10, 10, paint);
 
         paint.setTextAlign(Paint.Align.RIGHT);
         paint.setColor(Color.rgb(255, 100, 100));
         canvas.drawText("P2 ENEMY", getWidth() - 30, 30, paint);
 
-        // VS Emblem & Round Timer (Top-Center)
+        // VS Emblem & Timer
         float cx = getWidth() / 2f;
         paint.setTextAlign(Paint.Align.CENTER);
 
-        paint.setColor(Color.rgb(255, 215, 0)); // Gold VS
+        paint.setColor(Color.rgb(255, 215, 0));
         paint.setTextSize(30);
         canvas.drawText("VS", cx, 35, paint);
 
@@ -331,52 +326,37 @@ public class FightView extends View {
         paint.setTextAlign(Paint.Align.LEFT);
     }
 
-    private void drawControls(Canvas canvas) {
-        float cy = getHeight() - 110;
+    private void drawImmortalsControls(Canvas canvas) {
+        float bottomY = getHeight() - 70;
 
-        // Left / Right Movement D-Pad Buttons
-        drawArcadeButton(canvas, 100, cy, 52, Color.rgb(0, 180, 220), "◄");
-        drawArcadeButton(canvas, 230, cy, 52, Color.rgb(0, 180, 220), "►");
+        // Special Power Finisher Gauge (Bottom-Left)
+        paint.setColor(Color.BLACK);
+        canvas.drawRoundRect(26, bottomY - 35, 244, bottomY + 25, 15, 15, paint);
 
-        // Action Buttons: P (Punch), K (Kick), SP (Special)
-        float rx = getWidth() - 320;
-        float rx2 = getWidth() - 190;
-        float rx3 = getWidth() - 70;
+        paint.setColor(specialMeter >= 100 ? Color.rgb(0, 255, 200) : Color.rgb(0, 150, 220));
+        canvas.drawRoundRect(30, bottomY - 30, 30 + (210 * (specialMeter / 100f)), bottomY + 20, 12, 12, paint);
 
-        drawArcadeButton(canvas, rx, cy, 48, Color.rgb(230, 40, 40), "P");
-        drawArcadeButton(canvas, rx2, cy, 48, Color.rgb(240, 150, 0), "K");
-        drawArcadeButton(canvas, rx3, cy, 54, Color.rgb(0, 220, 255), "SP");
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(24);
+        paint.setTextAlign(Paint.Align.CENTER);
+        String specLabel = specialMeter >= 100 ? "FINISHER READY! TAP" : "SPECIAL POWER (" + specialMeter + "%)";
+        canvas.drawText(specLabel, 135, bottomY + 2, paint);
 
-        // Exit / Back to Mode Select Button
+        // Exit Button (Top-Left)
         paint.setColor(Color.argb(180, 50, 60, 80));
         canvas.drawRoundRect(20, 90, 140, 138, 12, 12, paint);
 
         paint.setColor(Color.CYAN);
         paint.setTextSize(22);
-        paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText("EXIT", 80, 120, paint);
 
+        // On-Screen Gesture Guide Hints
+        paint.setColor(Color.argb(150, 200, 220, 255));
+        paint.setTextSize(20);
+        paint.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText("TAP: Strike | SWIPE ➔: Heavy Kick | HOLD LEFT: Block", getWidth() - 20, getHeight() - 25, paint);
+
         paint.setTextAlign(Paint.Align.LEFT);
-    }
-
-    private void drawArcadeButton(Canvas canvas, float x, float y, float r, int mainColor, String label) {
-        // Outer Glow Ring
-        paint.setColor(Color.argb(100, Color.red(mainColor), Color.green(mainColor), Color.blue(mainColor)));
-        canvas.drawCircle(x, y, r + 6, paint);
-
-        // Bevel Rim
-        paint.setColor(Color.rgb(30, 35, 50));
-        canvas.drawCircle(x, y, r, paint);
-
-        // Inner Core
-        paint.setColor(mainColor);
-        canvas.drawCircle(x, y, r - 6, paint);
-
-        // Label Text
-        paint.setColor(Color.WHITE);
-        paint.setTextSize(r * 0.7f);
-        paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText(label, x, y + (r * 0.25f), paint);
     }
 
     private void drawResult(Canvas canvas) {
@@ -408,11 +388,9 @@ public class FightView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         float x = event.getX();
         float y = event.getY();
-        float cy = getHeight() - 110;
 
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_POINTER_DOWN:
                 performClick();
 
                 if (fightOver) {
@@ -428,61 +406,52 @@ public class FightView extends View {
                     return true;
                 }
 
-                // Left Movement Button
-                if (Math.hypot(x - 100, y - cy) <= 60) {
-                    movingLeft = true;
-                    return true;
-                }
-
-                // Right Movement Button
-                if (Math.hypot(x - 230, y - cy) <= 60) {
-                    movingRight = true;
-                    return true;
-                }
-
-                // Punch (P) Button
-                float rx = getWidth() - 320;
-                if (Math.hypot(x - rx, y - cy) <= 55) {
-                    player.punch();
-                    return true;
-                }
-
-                // Kick (K) Button
-                float rx2 = getWidth() - 190;
-                if (Math.hypot(x - rx2, y - cy) <= 55) {
-                    player.kick();
-                    return true;
-                }
-
-                // Special Attack (SP) Button
-                float rx3 = getWidth() - 70;
-                if (Math.hypot(x - rx3, y - cy) <= 60) {
-                    player.special();
-                    blasts.add(new EnergyBlast(player.getX() + 50, player.getY() - 20, true));
-                    SoundManager.playShoot();
-                    return true;
-                }
-
-                // Tap anywhere on Right Screen Area to Attack!
-                if (x >= getWidth() * 0.45f && y < getHeight() - 180f) {
-                    if (y < getHeight() * 0.35f) {
+                // SPECIAL FINISHER GAUGE TAP (Bottom-Left)
+                float bottomY = getHeight() - 70;
+                if (x >= 26 && x <= 244 && y >= bottomY - 35 && y <= bottomY + 25) {
+                    if (specialMeter >= 100) {
+                        specialMeter = 0;
                         player.special();
                         blasts.add(new EnergyBlast(player.getX() + 50, player.getY() - 20, true));
                         SoundManager.playShoot();
-                    } else if (y < getHeight() * 0.48f) {
-                        player.punch();
-                    } else {
-                        player.kick();
+                        return true;
                     }
-                    return true;
                 }
 
+                touchStartX = x;
+                isSwiping = false;
+
+                // Left Side Hold = Block
+                if (x < getWidth() * 0.3f) {
+                    player.block();
+                }
+                return true;
+
+            case MotionEvent.ACTION_MOVE:
+                float dx = x - touchStartX;
+
+                if (Math.abs(dx) > 50 && !isSwiping) {
+                    isSwiping = true;
+                    if (dx > 0) {
+                        // Swipe Right = Flying Heavy Dash Kick Attack!
+                        player.move(45, getWidth());
+                        player.kick();
+                        SoundManager.playHit();
+                    } else {
+                        // Swipe Left = Dash Back Dodge!
+                        player.move(-55, getWidth());
+                    }
+                }
                 return true;
 
             case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_POINTER_UP:
-                movingLeft = false;
-                movingRight = false;
+                if (!isSwiping) {
+                    // Tap = Light Combo Strike!
+                    if (x > getWidth() * 0.3f) {
+                        player.punch();
+                        specialMeter = Math.min(100, specialMeter + 8);
+                    }
+                }
                 return true;
         }
 
