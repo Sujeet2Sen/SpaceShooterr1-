@@ -56,9 +56,14 @@ public class WweRosterView extends View {
 
         if (resId != 0) {
             try {
-                Bitmap b = BitmapFactory.decodeResource(getResources(), resId);
-                photoCache.put(heroId, b);
-                return b;
+                BitmapFactory.Options opts = new BitmapFactory.Options();
+                opts.inSampleSize = 2;
+                Bitmap raw = BitmapFactory.decodeResource(getResources(), resId, opts);
+                if (raw != null) {
+                    Bitmap scaled = Bitmap.createScaledBitmap(raw, 200, 200, true);
+                    photoCache.put(heroId, scaled);
+                    return scaled;
+                }
             } catch (Exception ignored) {
             }
         }
