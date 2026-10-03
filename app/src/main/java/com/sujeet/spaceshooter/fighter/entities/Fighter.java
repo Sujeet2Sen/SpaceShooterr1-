@@ -1,9 +1,16 @@
 package com.sujeet.spaceshooter.fighter.entities;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.Rect;
 import android.graphics.RectF;
+
+import com.sujeet.spaceshooter.R;
 
 public class Fighter {
 
@@ -15,6 +22,7 @@ public class Fighter {
     private int baseDamage = 10;
     private int color = Color.rgb(0, 180, 255);
     private final boolean isPlayer;
+    private Bitmap photoBitmap;
 
     private FighterState state = FighterState.IDLE;
     private int actionTimer = 0;
@@ -28,13 +36,28 @@ public class Fighter {
         this.isPlayer = isPlayer;
     }
 
-    public void applySuperstar(WweSuperstar superstar) {
+    public void applySuperstar(Context context, WweSuperstar superstar) {
         if (superstar != null) {
             this.name = superstar.getName();
             this.maxHealth = superstar.getMaxHealth();
             this.health = this.maxHealth;
             this.baseDamage = superstar.getBaseDamage();
             this.color = superstar.getPrimaryColor();
+
+            // Load Real Character Photo
+            int resId = 0;
+            String id = superstar.getId();
+            if (id.equals("roman")) resId = R.drawable.roman;
+            else if (id.equals("cena")) resId = R.drawable.cena;
+            else if (id.equals("rock")) resId = R.drawable.rock;
+            else if (id.equals("undertaker")) resId = R.drawable.undertaker;
+
+            if (resId != 0 && context != null) {
+                try {
+                    this.photoBitmap = BitmapFactory.decodeResource(context.getResources(), resId);
+                } catch (Exception ignored) {
+                }
+            }
         }
     }
 
@@ -133,31 +156,24 @@ public class Fighter {
         int bodyColor = color;
         if (state == FighterState.HIT) bodyColor = Color.WHITE;
 
-        // Head
-        paint.setColor(Color.rgb(255, 205, 170));
-        canvas.drawCircle(x, y - height / 2 + 20, 22, paint);
+        // Draw Head or Real Character Photo Head
+        if (photoBitmap != null) {
+            canvas.save();
+            Path headClip = new Path();
+            headClip.addCircle(x, y - height / 2 + 20, 26, Path.Direction.CW);
+            canvas.clipPath(headClip);
 
-        // Character Specific Headgear / Hair
-        if (name.contains("CENA")) {
-            // Green Cap
-            paint.setColor(Color.rgb(0, 200, 80));
-            canvas.drawRect(x - 22, y - height / 2 + 2, x + 22, y - height / 2 + 16, paint);
-        } else if (name.contains("ROMAN")) {
-            // Long Black Hair
-            paint.setColor(Color.rgb(20, 20, 25));
-            canvas.drawRect(x - 26, y - height / 2 + 10, x - 18, y - height / 2 + 45, paint);
-            canvas.drawRect(x + 18, y - height / 2 + 10, x + 26, y - height / 2 + 45, paint);
-        } else if (name.contains("UNDERTAKER")) {
-            // Dark Hat
-            paint.setColor(Color.BLACK);
-            canvas.drawRect(x - 30, y - height / 2 + 5, x + 30, y - height / 2 + 15, paint);
-        } else if (name.contains("ROCK")) {
-            // Sunglasses
-            paint.setColor(Color.BLACK);
-            canvas.drawRect(x - 16, y - height / 2 + 16, x + 16, y - height / 2 + 23, paint);
+            Rect src = new Rect(0, 0, photoBitmap.getWidth(), photoBitmap.getHeight());
+            RectF dst = new RectF(x - 26, y - height / 2 - 6, x + 26, y - height / 2 + 46);
+            canvas.drawBitmap(photoBitmap, src, dst, paint);
+            canvas.restore();
+        } else {
+            // Skin Head Fallback
+            paint.setColor(Color.rgb(255, 205, 170));
+            canvas.drawCircle(x, y - height / 2 + 20, 22, paint);
         }
 
-        // Torso / Gi
+        // Torso / Vest
         paint.setColor(bodyColor);
         canvas.drawRect(x - 25, y - height / 2 + 42, x + 25, y + 20, paint);
 

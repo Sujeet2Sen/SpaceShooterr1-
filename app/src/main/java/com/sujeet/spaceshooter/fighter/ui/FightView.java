@@ -66,7 +66,7 @@ public class FightView extends View {
             enemyAi = new Fighter(p2X, floorY, false);
 
             WweSuperstar superstar = WweRosterStorage.getSelectedSuperstar(getContext());
-            player.applySuperstar(superstar);
+            player.applySuperstar(getContext(), superstar);
 
             blasts.clear();
             roundTimer = 60;

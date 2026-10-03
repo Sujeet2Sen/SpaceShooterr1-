@@ -1,22 +1,31 @@
 package com.sujeet.spaceshooter.fighter.ui;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.annotation.NonNull;
 
+import com.sujeet.spaceshooter.R;
 import com.sujeet.spaceshooter.fighter.data.WweRosterStorage;
 import com.sujeet.spaceshooter.fighter.entities.WweSuperstar;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class WweRosterView extends View {
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Map<String, Bitmap> photoCache = new HashMap<>();
 
     public interface OnRosterActionListener {
         void onStartFight();
@@ -33,6 +42,27 @@ public class WweRosterView extends View {
         this.listener = listener;
         setFocusable(true);
         refreshRoster();
+    }
+
+    private Bitmap getCachedPhoto(String heroId) {
+        if (photoCache.containsKey(heroId)) {
+            return photoCache.get(heroId);
+        }
+        int resId = 0;
+        if (heroId.equals("roman")) resId = R.drawable.roman;
+        else if (heroId.equals("cena")) resId = R.drawable.cena;
+        else if (heroId.equals("rock")) resId = R.drawable.rock;
+        else if (heroId.equals("undertaker")) resId = R.drawable.undertaker;
+
+        if (resId != 0) {
+            try {
+                Bitmap b = BitmapFactory.decodeResource(getResources(), resId);
+                photoCache.put(heroId, b);
+                return b;
+            } catch (Exception ignored) {
+            }
+        }
+        return null;
     }
 
     public void refreshRoster() {
@@ -89,7 +119,7 @@ public class WweRosterView extends View {
         paint.setTextSize(44);
         canvas.drawText(current.getName(), cx, 160, paint);
 
-        // Draw Custom Character Portrait Badge
+        // Draw Real Character Photo Portrait Badge
         drawCharacterPortrait(canvas, current, cx, cy - 80);
 
         // Navigation Arrows ◄ and ►
@@ -149,73 +179,27 @@ public class WweRosterView extends View {
     private void drawCharacterPortrait(Canvas canvas, WweSuperstar superstar, float x, float y) {
         // Portrait Circular Badge Base
         paint.setColor(Color.rgb(20, 20, 35));
-        canvas.drawCircle(x, y, 70, paint);
+        canvas.drawCircle(x, y, 75, paint);
 
+        Bitmap photo = getCachedPhoto(superstar.getId());
+        if (photo != null) {
+            canvas.save();
+            Path clipPath = new Path();
+            clipPath.addCircle(x, y, 70, Path.Direction.CW);
+            canvas.clipPath(clipPath);
+
+            Rect src = new Rect(0, 0, photo.getWidth(), photo.getHeight());
+            RectF dst = new RectF(x - 70, y - 70, x + 70, y + 70);
+            canvas.drawBitmap(photo, src, dst, paint);
+            canvas.restore();
+        }
+
+        // Gold / Team Primary Color Border Ring
         paint.setColor(superstar.getPrimaryColor());
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(6);
-        canvas.drawCircle(x, y, 68, paint);
+        canvas.drawCircle(x, y, 72, paint);
         paint.setStyle(Paint.Style.FILL);
-
-        String id = superstar.getId();
-
-        if (id.equals("roman")) {
-            // ROMAN REIGNS: Tribal Chief - Long Dark Hair & Gold Vest
-            paint.setColor(Color.rgb(255, 205, 170));
-            canvas.drawCircle(x, y - 5, 30, paint);
-
-            paint.setColor(Color.rgb(20, 20, 25));
-            canvas.drawRect(x - 35, y - 35, x - 25, y + 25, paint);
-            canvas.drawRect(x + 25, y - 35, x + 35, y + 25, paint);
-
-            paint.setColor(Color.rgb(0, 180, 255));
-            canvas.drawRect(x - 32, y + 15, x + 32, y + 55, paint);
-
-            paint.setColor(Color.YELLOW);
-            canvas.drawCircle(x, y + 32, 10, paint);
-
-        } else if (id.equals("cena")) {
-            // JOHN CENA: Green Cap & Red T-Shirt
-            paint.setColor(Color.rgb(255, 205, 170));
-            canvas.drawCircle(x, y - 2, 30, paint);
-
-            paint.setColor(Color.rgb(0, 200, 80));
-            canvas.drawRect(x - 32, y - 32, x + 32, y - 10, paint);
-
-            paint.setColor(Color.rgb(230, 40, 40));
-            canvas.drawRect(x - 32, y + 15, x + 32, y + 55, paint);
-
-            paint.setColor(Color.WHITE);
-            paint.setTextSize(20);
-            paint.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText("CENA", x, y + 38, paint);
-
-        } else if (id.equals("rock")) {
-            // THE ROCK: Shaved Head, Sunglasses, Brahma Bull Logo
-            paint.setColor(Color.rgb(240, 190, 150));
-            canvas.drawCircle(x, y - 5, 30, paint);
-
-            paint.setColor(Color.BLACK);
-            canvas.drawRect(x - 22, y - 12, x + 22, y - 2, paint);
-
-            paint.setColor(Color.rgb(30, 30, 30));
-            canvas.drawRect(x - 32, y + 15, x + 32, y + 55, paint);
-
-            paint.setColor(Color.rgb(255, 180, 0));
-            canvas.drawCircle(x, y + 35, 12, paint);
-
-        } else if (id.equals("undertaker")) {
-            // UNDERTAKER: Dark Hat & Purple Coat
-            paint.setColor(Color.rgb(230, 180, 150));
-            canvas.drawCircle(x, y, 30, paint);
-
-            paint.setColor(Color.BLACK);
-            canvas.drawRect(x - 45, y - 35, x + 45, y - 22, paint);
-            canvas.drawRect(x - 25, y - 48, x + 25, y - 35, paint);
-
-            paint.setColor(Color.rgb(120, 20, 160));
-            canvas.drawRect(x - 32, y + 20, x + 32, y + 55, paint);
-        }
     }
 
     @Override
