@@ -50,7 +50,9 @@ public class Fighter {
             if (id.equals("roman")) resId = R.drawable.roman;
             else if (id.equals("chris_hero")) resId = R.drawable.chris_hero;
             else if (id.equals("cena")) resId = R.drawable.cena;
+            else if (id.equals("rey")) resId = R.drawable.rey;
             else if (id.equals("rock")) resId = R.drawable.rock;
+            else if (id.equals("brock")) resId = R.drawable.brock;
             else if (id.equals("undertaker")) resId = R.drawable.undertaker;
 
             if (resId != 0 && context != null) {

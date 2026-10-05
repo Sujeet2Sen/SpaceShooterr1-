@@ -17,7 +17,7 @@ public class WweRosterStorage {
 
     public static int getCoins(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        return prefs.getInt(KEY_COINS, 200); // 200 free starting coins
+        return prefs.getInt(KEY_COINS, 300);
     }
 
     public static void addCoins(Context context, int amount) {
@@ -56,15 +56,25 @@ public class WweRosterStorage {
         int cenaLevel = prefs.getInt("level_cena", 1);
         roster.add(new WweSuperstar("cena", "JOHN CENA", 500, cenaUnlocked, cenaLevel, Color.rgb(230, 40, 40), Color.rgb(0, 180, 255)));
 
-        // 4. THE ROCK (1000 Coins)
+        // 4. REY MYSTERIO (800 Coins)
+        boolean reyUnlocked = prefs.getBoolean("unlocked_rey", false);
+        int reyLevel = prefs.getInt("level_rey", 1);
+        roster.add(new WweSuperstar("rey", "REY MYSTERIO", 800, reyUnlocked, reyLevel, Color.rgb(0, 220, 255), Color.rgb(255, 100, 0)));
+
+        // 5. THE ROCK (1200 Coins)
         boolean rockUnlocked = prefs.getBoolean("unlocked_rock", false);
         int rockLevel = prefs.getInt("level_rock", 1);
-        roster.add(new WweSuperstar("rock", "THE ROCK", 1000, rockUnlocked, rockLevel, Color.rgb(255, 180, 0), Color.rgb(30, 30, 30)));
+        roster.add(new WweSuperstar("rock", "THE ROCK", 1200, rockUnlocked, rockLevel, Color.rgb(255, 180, 0), Color.rgb(30, 30, 30)));
 
-        // 5. UNDERTAKER (2000 Coins)
+        // 6. BROCK LESNAR (1800 Coins)
+        boolean brockUnlocked = prefs.getBoolean("unlocked_brock", false);
+        int brockLevel = prefs.getInt("level_brock", 1);
+        roster.add(new WweSuperstar("brock", "BROCK LESNAR", 1800, brockUnlocked, brockLevel, Color.rgb(220, 100, 0), Color.rgb(40, 40, 40)));
+
+        // 7. UNDERTAKER (2500 Coins)
         boolean undertakerUnlocked = prefs.getBoolean("unlocked_undertaker", false);
         int undertakerLevel = prefs.getInt("level_undertaker", 1);
-        roster.add(new WweSuperstar("undertaker", "UNDERTAKER", 2000, undertakerUnlocked, undertakerLevel, Color.rgb(140, 30, 200), Color.rgb(10, 10, 10)));
+        roster.add(new WweSuperstar("undertaker", "UNDERTAKER", 2500, undertakerUnlocked, undertakerLevel, Color.rgb(140, 30, 200), Color.rgb(10, 10, 10)));
 
         return roster;
     }
@@ -76,7 +86,7 @@ public class WweRosterStorage {
                 return s;
             }
         }
-        return loadRoster(context).get(0); // Fallback Roman Reigns
+        return loadRoster(context).get(0);
     }
 
     public static void saveSuperstarState(Context context, String heroId, boolean unlocked, int level) {
