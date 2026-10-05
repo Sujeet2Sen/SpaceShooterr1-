@@ -50,6 +50,7 @@ public class WweRosterView extends View {
         }
         int resId = 0;
         if (heroId.equals("roman")) resId = R.drawable.roman;
+        else if (heroId.equals("chris_hero")) resId = R.drawable.chris_hero;
         else if (heroId.equals("cena")) resId = R.drawable.cena;
         else if (heroId.equals("rock")) resId = R.drawable.rock;
         else if (heroId.equals("undertaker")) resId = R.drawable.undertaker;

@@ -48,13 +48,19 @@ public class Fighter {
             int resId = 0;
             String id = superstar.getId();
             if (id.equals("roman")) resId = R.drawable.roman;
+            else if (id.equals("chris_hero")) resId = R.drawable.chris_hero;
             else if (id.equals("cena")) resId = R.drawable.cena;
             else if (id.equals("rock")) resId = R.drawable.rock;
             else if (id.equals("undertaker")) resId = R.drawable.undertaker;
 
             if (resId != 0 && context != null) {
                 try {
-                    this.photoBitmap = BitmapFactory.decodeResource(context.getResources(), resId);
+                    BitmapFactory.Options opts = new BitmapFactory.Options();
+                    opts.inSampleSize = 2;
+                    Bitmap raw = BitmapFactory.decodeResource(context.getResources(), resId, opts);
+                    if (raw != null) {
+                        this.photoBitmap = Bitmap.createScaledBitmap(raw, 150, 150, true);
+                    }
                 } catch (Exception ignored) {
                 }
             }

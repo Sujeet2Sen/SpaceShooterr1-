@@ -46,17 +46,22 @@ public class WweRosterStorage {
         int romanLevel = prefs.getInt("level_roman", 1);
         roster.add(new WweSuperstar("roman", "ROMAN REIGNS", 0, romanUnlocked, romanLevel, Color.rgb(0, 200, 255), Color.rgb(255, 215, 0)));
 
-        // 2. JOHN CENA (500 Coins)
+        // 2. CHRIS HERO (300 Coins)
+        boolean heroUnlocked = prefs.getBoolean("unlocked_chris_hero", false);
+        int heroLevel = prefs.getInt("level_chris_hero", 1);
+        roster.add(new WweSuperstar("chris_hero", "CHRIS HERO", 300, heroUnlocked, heroLevel, Color.rgb(0, 200, 150), Color.rgb(255, 255, 0)));
+
+        // 3. JOHN CENA (500 Coins)
         boolean cenaUnlocked = prefs.getBoolean("unlocked_cena", false);
         int cenaLevel = prefs.getInt("level_cena", 1);
         roster.add(new WweSuperstar("cena", "JOHN CENA", 500, cenaUnlocked, cenaLevel, Color.rgb(230, 40, 40), Color.rgb(0, 180, 255)));
 
-        // 3. THE ROCK (1000 Coins)
+        // 4. THE ROCK (1000 Coins)
         boolean rockUnlocked = prefs.getBoolean("unlocked_rock", false);
         int rockLevel = prefs.getInt("level_rock", 1);
         roster.add(new WweSuperstar("rock", "THE ROCK", 1000, rockUnlocked, rockLevel, Color.rgb(255, 180, 0), Color.rgb(30, 30, 30)));
 
-        // 4. UNDERTAKER (2000 Coins)
+        // 5. UNDERTAKER (2000 Coins)
         boolean undertakerUnlocked = prefs.getBoolean("unlocked_undertaker", false);
         int undertakerLevel = prefs.getInt("level_undertaker", 1);
         roster.add(new WweSuperstar("undertaker", "UNDERTAKER", 2000, undertakerUnlocked, undertakerLevel, Color.rgb(140, 30, 200), Color.rgb(10, 10, 10)));
