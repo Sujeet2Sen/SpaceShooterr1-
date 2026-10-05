@@ -119,7 +119,7 @@ public class GameView extends View {
         CollisionManager.keepInsideRing(enemy, getWidth());
         CollisionManager.preventOverlap(player, enemy);
 
-        // Enemy AI Update (Task 6)
+        // Enemy AI Update
         updateEnemyAi();
     }
 
@@ -153,13 +153,13 @@ public class GameView extends View {
                         if (enemy.punch()) {
                             executeHit(enemy, player, 10);
                         }
-                    } else if (choice < 80) {
+                    } else if (choice < 75) {
                         // Kick (15 Damage)
                         if (enemy.kick()) {
                             executeHit(enemy, player, 15);
                         }
                     } else {
-                        // Block
+                        // Enemy AI Blocks Sometimes!
                         enemy.block();
                     }
                 }
@@ -172,11 +172,17 @@ public class GameView extends View {
         float reach = attacker.getAttackRange();
 
         if (dist <= reach) {
-            SoundManager.playHit();
-            attacker.addPower(12); // Successful attack increases power meter!
+            boolean wasBlocked = (defender.getState() == FighterState.BLOCK);
+
+            if (!wasBlocked) {
+                attacker.addPower(12); // Power gain ONLY on unblocked hit!
+                SoundManager.playHit();
+            } else {
+                SoundManager.playShoot(); // Block audio feedback
+            }
 
             if (defender.takeDamage(damage)) {
-                // Knockout Condition
+                // KO Logic Intact
                 if (defender == enemy) {
                     gameState = GameState.VICTORY;
                     matchResult = "VICTORY!";
@@ -222,13 +228,13 @@ public class GameView extends View {
             player.draw(canvas, paint);
             enemy.draw(canvas, paint);
 
-            // TASK 1: Battle UI (Top Health Bars & Power Meters)
+            // Battle UI (Top Health Bars & Power Meters)
             GameUI.drawHUD(canvas, paint, player, enemy, getWidth(), getHeight());
 
-            // TASK 1: Bottom Touch Action Buttons
+            // Bottom Touch Action Buttons
             GameUI.drawControls(canvas, paint, player, getWidth(), getHeight());
 
-            // TASK 7: Game Result Overlay (VICTORY / DEFEAT & RESTART)
+            // Game Result Overlay (VICTORY / DEFEAT & RESTART)
             if (gameState == GameState.VICTORY || gameState == GameState.GAME_OVER) {
                 GameUI.drawOverlayResult(canvas, paint, matchResult, getWidth(), getHeight());
             }
@@ -290,7 +296,7 @@ public class GameView extends View {
             case MotionEvent.ACTION_POINTER_DOWN:
                 performClick();
 
-                // TASK 7: Restart Button Click
+                // Restart Button Click
                 if (gameState == GameState.VICTORY || gameState == GameState.GAME_OVER) {
                     if (GameUI.isRestartPressed(x, y)) {
                         initGame();
@@ -299,7 +305,7 @@ public class GameView extends View {
                     return true;
                 }
 
-                // TASK 1 & 2: Movement & Actions
+                // Movement & Actions
                 if (GameUI.isLeftPressed(x, y)) {
                     movingLeft = true;
                     return true;
@@ -309,29 +315,29 @@ public class GameView extends View {
                     return true;
                 }
 
-                // TASK 3: Combat Actions
+                // Combat Actions
                 if (GameUI.isPunchPressed(x, y)) {
                     if (player.punch()) {
-                        executeHit(player, enemy, 10); // Punch = 10 damage
+                        executeHit(player, enemy, 10);
                     }
                     return true;
                 }
 
                 if (GameUI.isKickPressed(x, y)) {
                     if (player.kick()) {
-                        executeHit(player, enemy, 15); // Kick = 15 damage
+                        executeHit(player, enemy, 15);
                     }
                     return true;
                 }
 
                 if (GameUI.isBlockPressed(x, y)) {
-                    player.block(); // Block reduces incoming damage
+                    player.block(); // Block activation
                     return true;
                 }
 
                 if (GameUI.isSpecialPressed(x, y)) {
                     if (player.special()) {
-                        executeHit(player, enemy, 30); // Special = 30 damage (requires 100 power)
+                        executeHit(player, enemy, 30);
                     }
                     return true;
                 }

@@ -46,20 +46,20 @@ public abstract class Fighter {
         if (actionTimer > 0) {
             actionTimer--;
             if (actionTimer == 0) {
-                state = FighterState.IDLE;
+                state = FighterState.IDLE; // Automatically returns to IDLE!
             }
         }
     }
 
     public void moveLeft() {
-        if (state == FighterState.KO || state == FighterState.PUNCH || state == FighterState.KICK || state == FighterState.SPECIAL) return;
+        if (state == FighterState.KO || state == FighterState.BLOCK || state == FighterState.PUNCH || state == FighterState.KICK || state == FighterState.SPECIAL) return;
         x -= speed;
         facingRight = false;
         if (actionTimer == 0) state = FighterState.WALK;
     }
 
     public void moveRight() {
-        if (state == FighterState.KO || state == FighterState.PUNCH || state == FighterState.KICK || state == FighterState.SPECIAL) return;
+        if (state == FighterState.KO || state == FighterState.BLOCK || state == FighterState.PUNCH || state == FighterState.KICK || state == FighterState.SPECIAL) return;
         x += speed;
         facingRight = true;
         if (actionTimer == 0) state = FighterState.WALK;
@@ -72,7 +72,7 @@ public abstract class Fighter {
     }
 
     public boolean punch() {
-        if (actionTimer == 0 && state != FighterState.KO) {
+        if (actionTimer == 0 && state != FighterState.KO && state != FighterState.BLOCK) {
             state = FighterState.PUNCH;
             actionTimer = 12;
             return true;
@@ -81,7 +81,7 @@ public abstract class Fighter {
     }
 
     public boolean kick() {
-        if (actionTimer == 0 && state != FighterState.KO) {
+        if (actionTimer == 0 && state != FighterState.KO && state != FighterState.BLOCK) {
             state = FighterState.KICK;
             actionTimer = 16;
             return true;
@@ -92,14 +92,14 @@ public abstract class Fighter {
     public boolean block() {
         if (actionTimer == 0 && state != FighterState.KO) {
             state = FighterState.BLOCK;
-            actionTimer = 18;
+            actionTimer = 20; // Block duration
             return true;
         }
         return false;
     }
 
     public boolean special() {
-        if (actionTimer == 0 && state != FighterState.KO && power >= maxPower) {
+        if (actionTimer == 0 && state != FighterState.KO && state != FighterState.BLOCK && power >= maxPower) {
             state = FighterState.SPECIAL;
             actionTimer = 22;
             power = 0; // Consume power meter
@@ -110,12 +110,12 @@ public abstract class Fighter {
 
     public boolean takeDamage(int damage) {
         if (state == FighterState.BLOCK) {
-            damage = Math.max(1, damage / 4); // Block reduces 75% damage
+            damage = Math.max(1, (int)(damage * 0.25f)); // 75% reduction: 10->2, 15->3, 30->7
         }
         health -= damage;
         if (health <= 0) {
             health = 0;
-            state = FighterState.KO;
+            state = FighterState.KO; // KO logic intact
             return true; // KO!
         } else if (state != FighterState.BLOCK) {
             state = FighterState.HIT;
@@ -178,8 +178,12 @@ public abstract class Fighter {
             paint.setColor(secondaryColor);
             canvas.drawCircle(fistX, y, 16, paint);
         } else if (state == FighterState.BLOCK) {
-            paint.setColor(secondaryColor);
-            canvas.drawRect(x - 20, y - 20, x + 20, y + 20, paint);
+            // Defensive Shield Stance & Aura
+            float guardX = facingRight ? (x + 20) : (x - 20);
+            paint.setColor(Color.argb(180, 255, 215, 0));
+            canvas.drawRoundRect(guardX - 15, y - 40, guardX + 15, y + 20, 10, 10, paint);
+            paint.setColor(Color.WHITE);
+            canvas.drawRoundRect(guardX - 10, y - 35, guardX + 10, y + 15, 8, 8, paint);
         } else if (state == FighterState.SPECIAL) {
             float auraX = facingRight ? (x + 80) : (x - 80);
             paint.setColor(Color.argb(180, 0, 255, 255));
