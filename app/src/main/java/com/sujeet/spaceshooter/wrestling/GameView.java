@@ -10,9 +10,14 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 
+import com.sujeet.spaceshooter.utils.SoundManager;
+
+import java.util.Random;
+
 public class GameView extends View {
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Random random = new Random();
 
     private PlayerFighter player;
     private EnemyFighter enemy;
@@ -21,6 +26,9 @@ public class GameView extends View {
 
     private boolean movingLeft = false;
     private boolean movingRight = false;
+
+    private int aiCooldownTimer = 0;
+    private String matchResult = "";
 
     private boolean running = true;
     private Thread gameThread;
@@ -39,9 +47,20 @@ public class GameView extends View {
             float p1X = getWidth() > 0 ? getWidth() * 0.30f : 300f;
             float p2X = getWidth() > 0 ? getWidth() * 0.70f : 800f;
 
-            player = new PlayerFighter(p1X, floorY);
-            enemy = new EnemyFighter(p2X, floorY);
+            if (player == null) {
+                player = new PlayerFighter(p1X, floorY);
+            } else {
+                player.reset(p1X, floorY);
+            }
 
+            if (enemy == null) {
+                enemy = new EnemyFighter(p2X, floorY);
+            } else {
+                enemy.reset(p2X, floorY);
+            }
+
+            aiCooldownTimer = 0;
+            matchResult = "";
             gameState = GameState.PLAYING;
         }
     }
@@ -50,7 +69,7 @@ public class GameView extends View {
     private void startGameLoop() {
         gameThread = new Thread(() -> {
             long lastTime = System.nanoTime();
-            double nsPerTick = 1000000000.0 / 60.0; // Target 60 FPS
+            double nsPerTick = 1000000000.0 / 60.0;
 
             while (running) {
                 long now = System.nanoTime();
@@ -83,11 +102,13 @@ public class GameView extends View {
             enemy.setY(floorY);
         }
 
-        // Handle Player Movement
+        // Player Movement
         if (movingLeft) {
             player.moveLeft();
         } else if (movingRight) {
             player.moveRight();
+        } else {
+            player.stopMove();
         }
 
         player.update();
@@ -97,6 +118,74 @@ public class GameView extends View {
         CollisionManager.keepInsideRing(player, getWidth());
         CollisionManager.keepInsideRing(enemy, getWidth());
         CollisionManager.preventOverlap(player, enemy);
+
+        // Enemy AI Update (Task 6)
+        updateEnemyAi();
+    }
+
+    private void updateEnemyAi() {
+        if (gameState != GameState.PLAYING || enemy.getState() == FighterState.KO) return;
+
+        float dist = Math.abs(enemy.getX() - player.getX());
+
+        if (aiCooldownTimer > 0) {
+            aiCooldownTimer--;
+        }
+
+        if (dist > 130) {
+            // Approach Player
+            enemy.moveLeft();
+        } else {
+            enemy.stopMove();
+
+            if (aiCooldownTimer == 0) {
+                aiCooldownTimer = 25; // Attack cooldown timer
+
+                if (enemy.getPower() >= enemy.getMaxPower()) {
+                    // Special Attack (30 Damage)
+                    if (enemy.special()) {
+                        executeHit(enemy, player, 30);
+                    }
+                } else {
+                    int choice = random.nextInt(100);
+                    if (choice < 45) {
+                        // Punch (10 Damage)
+                        if (enemy.punch()) {
+                            executeHit(enemy, player, 10);
+                        }
+                    } else if (choice < 80) {
+                        // Kick (15 Damage)
+                        if (enemy.kick()) {
+                            executeHit(enemy, player, 15);
+                        }
+                    } else {
+                        // Block
+                        enemy.block();
+                    }
+                }
+            }
+        }
+    }
+
+    private void executeHit(Fighter attacker, Fighter defender, int damage) {
+        float dist = Math.abs(attacker.getX() - defender.getX());
+        float reach = attacker.getAttackRange();
+
+        if (dist <= reach) {
+            SoundManager.playHit();
+            attacker.addPower(12); // Successful attack increases power meter!
+
+            if (defender.takeDamage(damage)) {
+                // Knockout Condition
+                if (defender == enemy) {
+                    gameState = GameState.VICTORY;
+                    matchResult = "VICTORY!";
+                } else {
+                    gameState = GameState.GAME_OVER;
+                    matchResult = "DEFEAT!";
+                }
+            }
+        }
     }
 
     @Override
@@ -133,8 +222,16 @@ public class GameView extends View {
             player.draw(canvas, paint);
             enemy.draw(canvas, paint);
 
-            // Draw On-Screen Movement Controls
-            drawControls(canvas);
+            // TASK 1: Battle UI (Top Health Bars & Power Meters)
+            GameUI.drawHUD(canvas, paint, player, enemy, getWidth(), getHeight());
+
+            // TASK 1: Bottom Touch Action Buttons
+            GameUI.drawControls(canvas, paint, player, getWidth(), getHeight());
+
+            // TASK 7: Game Result Overlay (VICTORY / DEFEAT & RESTART)
+            if (gameState == GameState.VICTORY || gameState == GameState.GAME_OVER) {
+                GameUI.drawOverlayResult(canvas, paint, matchResult, getWidth(), getHeight());
+            }
         }
     }
 
@@ -177,25 +274,6 @@ public class GameView extends View {
         paint.setStyle(Paint.Style.FILL);
     }
 
-    private void drawControls(Canvas canvas) {
-        float cy = getHeight() - 100f;
-
-        // Left D-Pad Button
-        paint.setColor(Color.argb(160, 0, 180, 240));
-        canvas.drawRoundRect(60, cy - 40, 180, cy + 40, 15, 15, paint);
-
-        // Right D-Pad Button
-        canvas.drawRoundRect(210, cy - 40, 330, cy + 40, 15, 15, paint);
-
-        paint.setColor(Color.WHITE);
-        paint.setTextSize(36);
-        paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("LEFT", 120, cy + 12, paint);
-        canvas.drawText("RIGHT", 270, cy + 12, paint);
-
-        paint.setTextAlign(Paint.Align.LEFT);
-    }
-
     @Override
     public boolean performClick() {
         super.performClick();
@@ -206,24 +284,58 @@ public class GameView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         float x = event.getX();
         float y = event.getY();
-        float cy = getHeight() - 100f;
 
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
                 performClick();
 
-                // Left Button
-                if (x >= 60 && x <= 180 && y >= cy - 40 && y <= cy + 40) {
-                    movingLeft = true;
+                // TASK 7: Restart Button Click
+                if (gameState == GameState.VICTORY || gameState == GameState.GAME_OVER) {
+                    if (GameUI.isRestartPressed(x, y)) {
+                        initGame();
+                        return true;
+                    }
                     return true;
                 }
 
-                // Right Button
-                if (x >= 210 && x <= 330 && y >= cy - 40 && y <= cy + 40) {
+                // TASK 1 & 2: Movement & Actions
+                if (GameUI.isLeftPressed(x, y)) {
+                    movingLeft = true;
+                    return true;
+                }
+                if (GameUI.isRightPressed(x, y)) {
                     movingRight = true;
                     return true;
                 }
+
+                // TASK 3: Combat Actions
+                if (GameUI.isPunchPressed(x, y)) {
+                    if (player.punch()) {
+                        executeHit(player, enemy, 10); // Punch = 10 damage
+                    }
+                    return true;
+                }
+
+                if (GameUI.isKickPressed(x, y)) {
+                    if (player.kick()) {
+                        executeHit(player, enemy, 15); // Kick = 15 damage
+                    }
+                    return true;
+                }
+
+                if (GameUI.isBlockPressed(x, y)) {
+                    player.block(); // Block reduces incoming damage
+                    return true;
+                }
+
+                if (GameUI.isSpecialPressed(x, y)) {
+                    if (player.special()) {
+                        executeHit(player, enemy, 30); // Special = 30 damage (requires 100 power)
+                    }
+                    return true;
+                }
+
                 return true;
 
             case MotionEvent.ACTION_UP:
