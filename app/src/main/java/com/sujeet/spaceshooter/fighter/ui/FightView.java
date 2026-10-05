@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
 import android.view.MotionEvent;
 import android.view.View;
@@ -37,6 +38,8 @@ public class FightView extends View {
     private boolean fightOver = false;
     private boolean rewardedCoins = false;
     private String matchResult = "";
+    private String finisherText = "";
+    private int finisherTextTimer = 0;
 
     private int specialMeter = 0; // 0 to 100 Finisher Meter
 
@@ -75,6 +78,8 @@ public class FightView extends View {
             fightOver = false;
             rewardedCoins = false;
             matchResult = "";
+            finisherText = "";
+            finisherTextTimer = 0;
         }
     }
 
@@ -106,6 +111,10 @@ public class FightView extends View {
             enemyAi.setPosition(getWidth() * 0.72f, floorY);
         }
 
+        if (finisherTextTimer > 0) {
+            finisherTextTimer--;
+        }
+
         // Round timer
         frameCounter++;
         if (frameCounter >= 60) {
@@ -115,10 +124,10 @@ public class FightView extends View {
                 roundTimer = 0;
                 fightOver = true;
                 if (player.getHealth() > enemyAi.getHealth()) {
-                    matchResult = "TIME UP! YOU WIN! (+150 COINS)";
+                    matchResult = "1... 2... 3... PINFALL! YOU WIN! (+150 COINS)";
                     awardVictoryCoins();
                 } else if (enemyAi.getHealth() > player.getHealth()) {
-                    matchResult = "TIME UP! YOU LOSE!";
+                    matchResult = "1... 2... 3... PINFALL! YOU LOSE!";
                 } else {
                     matchResult = "TIME UP! DRAW!";
                 }
@@ -144,7 +153,7 @@ public class FightView extends View {
                 SoundManager.playHit();
                 if (player.takeDamage(18)) {
                     fightOver = true;
-                    matchResult = "K.O.! YOU LOSE!";
+                    matchResult = "1... 2... 3... PINFALL! YOU LOSE!";
                 }
                 continue;
             }
@@ -155,7 +164,7 @@ public class FightView extends View {
                 specialMeter = Math.min(100, specialMeter + 25);
                 if (enemyAi.takeDamage(player.getAttackDamage(false) + 12)) {
                     fightOver = true;
-                    matchResult = "K.O.! YOU WIN! (+150 COINS)";
+                    matchResult = "1... 2... 3... PINFALL! YOU WIN! (+150 COINS)";
                     awardVictoryCoins();
                 }
                 continue;
@@ -187,7 +196,7 @@ public class FightView extends View {
                 specialMeter = Math.min(100, specialMeter + 10);
                 if (enemyAi.takeDamage(dmg)) {
                     fightOver = true;
-                    matchResult = "K.O.! YOU WIN! (+150 COINS)";
+                    matchResult = "1... 2... 3... PINFALL! YOU WIN! (+150 COINS)";
                     awardVictoryCoins();
                 }
             }
@@ -200,7 +209,7 @@ public class FightView extends View {
                 SoundManager.playHit();
                 if (player.takeDamage(dmg)) {
                     fightOver = true;
-                    matchResult = "K.O.! YOU LOSE!";
+                    matchResult = "1... 2... 3... PINFALL! YOU LOSE!";
                 }
             }
         }
@@ -240,24 +249,31 @@ public class FightView extends View {
         synchronized (lock) {
             float floorY = getHeight() > 0 ? getHeight() * 0.65f : 950f;
 
-            // Full-Screen Sunset Arena Background
-            canvas.drawColor(Color.rgb(20, 12, 35));
+            // Full-Screen WWE Arena Stadium Background
+            canvas.drawColor(Color.rgb(12, 10, 25));
 
-            paint.setColor(Color.rgb(180, 50, 80));
-            canvas.drawRect(0, floorY - 380, getWidth(), floorY + 20, paint);
+            // Stadium Spotlights
+            drawStadiumSpotlights(canvas);
 
-            paint.setColor(Color.rgb(230, 100, 50));
-            canvas.drawRect(0, floorY - 220, getWidth(), floorY + 20, paint);
-
-            // Torch Pillars
+            // Torch Pillars & Crowd
             drawPillars(canvas, floorY);
 
-            // Arena Floor Mat with Neon Boundary
-            paint.setColor(Color.rgb(35, 20, 55));
+            // WWE Ring Mat (Light Grey Canvas)
+            paint.setColor(Color.rgb(220, 220, 230));
             canvas.drawRect(0, floorY + 20, getWidth(), getHeight(), paint);
 
-            paint.setColor(Color.rgb(0, 220, 255));
-            canvas.drawRect(0, floorY + 12, getWidth(), floorY + 20, paint);
+            // Red Ring Apron Mat Edge
+            paint.setColor(Color.rgb(200, 20, 30));
+            canvas.drawRect(0, floorY + 20, getWidth(), floorY + 38, paint);
+
+            // WWE Ring Canvas Center Emblem
+            paint.setColor(Color.argb(50, 200, 20, 30));
+            paint.setTextSize(48);
+            paint.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText("W W E", getWidth() / 2f, floorY + 120, paint);
+
+            // 3 WWE Red Ring Ropes
+            drawWweRingRopes(canvas, floorY);
 
             // Energy Blasts
             for (EnergyBlast blast : blasts) {
@@ -271,6 +287,15 @@ public class FightView extends View {
             // HUD
             drawHUD(canvas);
 
+            // Finisher Text Overlay
+            if (finisherTextTimer > 0) {
+                paint.setColor(Color.YELLOW);
+                paint.setTextSize(55);
+                paint.setTextAlign(Paint.Align.CENTER);
+                canvas.drawText(finisherText, getWidth() / 2f, getHeight() * 0.35f, paint);
+                paint.setTextAlign(Paint.Align.LEFT);
+            }
+
             // Immortals Style Special Skill Bar & Controls Guide
             drawImmortalsControls(canvas);
 
@@ -281,18 +306,48 @@ public class FightView extends View {
         }
     }
 
+    private void drawStadiumSpotlights(Canvas canvas) {
+        paint.setColor(Color.argb(25, 255, 255, 200));
+        Path light1 = new Path();
+        light1.moveTo(getWidth() * 0.2f, 0);
+        light1.lineTo(0, getHeight() * 0.65f);
+        light1.lineTo(getWidth() * 0.5f, getHeight() * 0.65f);
+        light1.close();
+        canvas.drawPath(light1, paint);
+
+        Path light2 = new Path();
+        light2.moveTo(getWidth() * 0.8f, 0);
+        light2.lineTo(getWidth() * 0.5f, getHeight() * 0.65f);
+        light2.lineTo(getWidth(), getHeight() * 0.65f);
+        light2.close();
+        canvas.drawPath(light2, paint);
+    }
+
     private void drawPillars(Canvas canvas, float floorY) {
-        paint.setColor(Color.rgb(80, 80, 95));
-        canvas.drawRect(50, floorY - 320, 90, floorY + 20, paint);
-        canvas.drawRect(getWidth() - 90, floorY - 320, getWidth() - 50, floorY + 20, paint);
+        paint.setColor(Color.rgb(180, 20, 20));
+        canvas.drawRect(20, floorY - 260, 45, floorY + 20, paint);
+        canvas.drawRect(getWidth() - 45, floorY - 260, getWidth() - 20, floorY + 20, paint);
 
-        paint.setColor(Color.rgb(255, 140, 0));
-        canvas.drawCircle(70, floorY - 335, 18, paint);
-        canvas.drawCircle(getWidth() - 70, floorY - 335, 18, paint);
+        paint.setColor(Color.rgb(220, 30, 30));
+        canvas.drawRoundRect(15, floorY - 210, 50, floorY - 180, 8, 8, paint);
+        canvas.drawRoundRect(15, floorY - 140, 50, floorY - 110, 8, 8, paint);
+        canvas.drawRoundRect(15, floorY - 70, 50, floorY - 40, 8, 8, paint);
 
-        paint.setColor(Color.YELLOW);
-        canvas.drawCircle(70, floorY - 335, 10, paint);
-        canvas.drawCircle(getWidth() - 70, floorY - 335, 10, paint);
+        canvas.drawRoundRect(getWidth() - 50, floorY - 210, getWidth() - 15, floorY - 180, 8, 8, paint);
+        canvas.drawRoundRect(getWidth() - 50, floorY - 140, getWidth() - 15, floorY - 110, 8, 8, paint);
+        canvas.drawRoundRect(getWidth() - 50, floorY - 70, getWidth() - 15, floorY - 40, 8, 8, paint);
+    }
+
+    private void drawWweRingRopes(Canvas canvas, float floorY) {
+        paint.setColor(Color.rgb(230, 30, 30));
+        paint.setStrokeWidth(10);
+        paint.setStyle(Paint.Style.STROKE);
+
+        canvas.drawLine(32, floorY - 195, getWidth() - 32, floorY - 195, paint);
+        canvas.drawLine(32, floorY - 125, getWidth() - 32, floorY - 125, paint);
+        canvas.drawLine(32, floorY - 55, getWidth() - 32, floorY - 55, paint);
+
+        paint.setStyle(Paint.Style.FILL);
     }
 
     private void drawHUD(Canvas canvas) {
@@ -386,7 +441,7 @@ public class FightView extends View {
 
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setColor(matchResult.contains("WIN") ? Color.YELLOW : Color.RED);
-        paint.setTextSize(65);
+        paint.setTextSize(55);
         canvas.drawText(matchResult, cx, cy - 40, paint);
 
         paint.setColor(Color.WHITE);
@@ -430,8 +485,10 @@ public class FightView extends View {
                     if (specialMeter >= 100) {
                         specialMeter = 0;
                         player.special();
+                        finisherText = player.getFinisherName();
+                        finisherTextTimer = 60;
                         blasts.add(new EnergyBlast(player.getX() + 50, player.getY() - 20, true));
-                        SoundManager.playShoot();
+                        SoundManager.playExplosion();
                         return true;
                     }
                 }

@@ -44,7 +44,6 @@ public class Fighter {
             this.baseDamage = superstar.getBaseDamage();
             this.color = superstar.getPrimaryColor();
 
-            // Load Real Character Photo
             int resId = 0;
             String id = superstar.getId();
             if (id.equals("roman")) resId = R.drawable.roman;
@@ -79,7 +78,6 @@ public class Fighter {
             }
         }
 
-        // Keep facing & spacing opponent
         if (isPlayer && x > opponentX - 60) x = opponentX - 60;
         if (!isPlayer && x < opponentX + 60) x = opponentX + 60;
     }
@@ -141,6 +139,17 @@ public class Fighter {
         return isKick ? (baseDamage + 4) : baseDamage;
     }
 
+    public String getFinisherName() {
+        if (name.contains("ROMAN")) return "SPEAR!";
+        if (name.contains("HERO")) return "HERO'S WELCOME!";
+        if (name.contains("CENA")) return "ATTITUDE ADJUSTMENT!";
+        if (name.contains("REY")) return "619!";
+        if (name.contains("ROCK")) return "ROCK BOTTOM!";
+        if (name.contains("BROCK")) return "F-5 SUPLEX!";
+        if (name.contains("UNDERTAKER")) return "TOMBSTONE PILEDRIVER!";
+        return "FINISHER MOVE!";
+    }
+
     public RectF getHitBox() {
         float reach = 0;
         if (state == FighterState.PUNCH) reach = 55;
@@ -176,7 +185,6 @@ public class Fighter {
             canvas.drawBitmap(photoBitmap, src, dst, paint);
             canvas.restore();
         } else {
-            // Skin Head Fallback
             paint.setColor(Color.rgb(255, 205, 170));
             canvas.drawCircle(x, y - height / 2 + 20, 22, paint);
         }
