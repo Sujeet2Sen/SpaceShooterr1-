@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Space Shooter"
 include(":app")
+include(":app_wrestling")
